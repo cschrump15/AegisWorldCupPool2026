@@ -84,24 +84,26 @@ export default function StandingsTable() {
       <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700">
         <div className="flex gap-1">
           <button
-            onClick={() => setActiveTab('standings')}
-            className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-              activeTab === 'standings'
-                ? 'bg-orange-500 text-white'
-                : 'text-gray-500 hover:text-gray-300'
-            }`}
-          >
-            Standings
-          </button>
-          <button
-            onClick={() => setActiveTab('shutout')}
-            className={`px-3 py-1.5 rounded text-sm font-medium transition-colors flex items-center gap-1.5 ${
-              activeTab === 'shutout'
-                ? 'bg-orange-500 text-white'
-                : 'text-gray-500 hover:text-gray-300'
-            }`}
-          >
-            Shutout prize
+  onClick={() => setActiveTab('standings')}
+  className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+    activeTab === 'standings'
+      ? 'bg-orange-500 text-white'
+      : 'hover:text-white'
+  }`}
+  style={{ color: activeTab === 'standings' ? undefined : '#cbd5e1' }}
+>
+  Standings
+</button>
+<button
+  onClick={() => setActiveTab('shutout')}
+  className={`px-3 py-1.5 rounded text-sm font-medium transition-colors flex items-center gap-1.5 ${
+    activeTab === 'shutout'
+      ? 'bg-orange-500 text-white'
+      : 'hover:text-white'
+  }`}
+  style={{ color: activeTab === 'shutout' ? undefined : '#cbd5e1' }}
+>
+  Shutout Prize
             {shutoutWinners.length > 0 && (
               <span className="bg-yellow-500 text-black text-xs px-1.5 py-0.5 rounded-full font-bold">
                 {shutoutWinners.length}
