@@ -1,0 +1,1 @@
+# AegisWorldCupPool2026
