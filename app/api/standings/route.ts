@@ -25,6 +25,9 @@ export interface PoolResult {
   members: string
   team: string
   flag: string
+  bg: string
+  text: string
+  border: string
   group: string
   gamesPlayed: number
   goalsFor: number
@@ -117,6 +120,9 @@ export async function GET() {
       members: entry.members,
       team: entry.team,
       flag: entry.flag,
+      bg: entry.bg,
+      text: entry.text,
+      border: entry.border,
       group: match?.groupName ?? entry.group,
       gamesPlayed,
       goalsFor,
