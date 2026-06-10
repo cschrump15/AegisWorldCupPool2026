@@ -10,17 +10,21 @@ const config: Config = {
     extend: {
       colors: {
         charcoal: {
-          900: '#1B2B6B',
-          800: '#1f3278',
-          700: '#243a8a',
-          600: '#2a4499',
-          500: '#3554b8',
+          900: '#1a1a1a',
+          800: '#242424',
+          700: '#2e2e2e',
+          600: '#3a3a3a',
+          500: '#4a4a4a',
         },
         orange: {
-          500: '#F5A800',
-          400: '#FFBE33',
-          300: '#FFD166',
+          500: '#f97316',
+          400: '#fb923c',
+          300: '#fdba74',
         },
+      },
+      fontFamily: {
+        display: ['Barlow Condensed', 'sans-serif'],
+        sans: ['Barlow', 'system-ui', 'sans-serif'],
       },
     },
   },
