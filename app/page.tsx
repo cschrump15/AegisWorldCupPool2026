@@ -10,7 +10,7 @@ export default function Home() {
             2026 Aegis World Cup Pool
           </h1>
         </div>
-        <p className="text-sm ml-12" style={{ color: '#7a9fd4' }}>
+        <p className="text-sm ml-12" style={{ color: '#fff' }}>
           Furthest team wins the main prize · Score zero goals in group play for the bonus
         </p>
       </div>
