@@ -6,8 +6,11 @@ export default function Home() {
       <div className="px-4 sm:px-0 mb-6">
         <div className="flex items-center gap-3 mb-1">
           <span className="text-3xl">⚽</span>
-          <h1 className="text-2xl font-bold" style={{ color: '#F5A800' }}>
-            2026 Aegis World Cup Pool
+          <h1
+            className="font-display font-bold tracking-wide"
+            style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '28px', fontWeight: 800, letterSpacing: '1px', color: '#fff' }}
+          >
+            2026 AEGIS WORLD CUP POOL
           </h1>
         </div>
         <p className="text-sm ml-12" style={{ color: '#fff' }}>
@@ -19,7 +22,7 @@ export default function Home() {
         <StandingsTable />
       </div>
 
-      <div className="mt-4 px-4 sm:px-0 text-xs text-center" style={{ color: '#3554b8' }}>
+      <div className="mt-4 px-4 sm:px-0 text-xs text-center" style={{ color: '#4a4a4a' }}>
         Live data from ESPN · Tournament runs June 11 – July 19, 2026
       </div>
     </main>
