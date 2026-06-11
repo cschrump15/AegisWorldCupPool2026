@@ -14,7 +14,7 @@ export default function Home() {
           </h1>
         </div>
         <p className="text-sm ml-12" style={{ color: '#fff' }}>
-          Furthest team wins the main prize · SScore zero goals in group play for the secondary prize
+          Furthest team wins the main prize · Score zero goals in group play for the secondary prize
         </p>
       </div>
 
