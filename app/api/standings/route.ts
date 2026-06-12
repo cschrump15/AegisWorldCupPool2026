@@ -44,21 +44,28 @@ export interface PoolResult {
 
 function normalizeTeamName(name: string): string {
   return name.toLowerCase()
-    .replace(/é/g, 'e').replace(/ô/g, 'o').replace(/ç/g, 'c')
-    .replace(/['']/g, "'").trim()
+    .replace(/é/g, 'e')
+    .replace(/ô/g, 'o')
+    .replace(/ç/g, 'c')
+    .replace(/ü/g, 'u')
+    .replace(/ö/g, 'o')
+    .replace(/['']/g, "'")
+    .trim()
 }
 
 async function fetchESPNStandings(): Promise<GroupStandings[]> {
   try {
     const res = await fetch(ESPN_STANDINGS_URL, {
-      next: { revalidate: 300 },
+      cache: 'no-store',
       headers: { 'User-Agent': 'Mozilla/5.0' },
     })
     if (!res.ok) throw new Error(`ESPN standings ${res.status}`)
     const data = await res.json()
 
     const groups: GroupStandings[] = []
-    const standingsGroups = data?.standings?.groups ?? data?.children ?? []
+
+    // ESPN returns data.children[] for 2026 World Cup
+    const standingsGroups = data?.children ?? data?.standings?.groups ?? []
 
     for (const grp of standingsGroups) {
       const groupName: string = grp.name ?? grp.abbreviation ?? 'Unknown'
@@ -67,17 +74,18 @@ async function fetchESPNStandings(): Promise<GroupStandings[]> {
       const teams: TeamStanding[] = entries.map((entry: any) => {
         const stats: any = {}
         for (const s of entry.stats ?? []) {
-          stats[s.name ?? s.abbreviation] = s.value ?? s.displayValue
+          stats[s.name] = s.value
+          stats[s.abbreviation] = s.value
         }
         return {
           espnName: entry.team?.displayName ?? entry.team?.name ?? '',
           gamesPlayed: Number(stats['gamesPlayed'] ?? stats['GP'] ?? 0),
           wins: Number(stats['wins'] ?? stats['W'] ?? 0),
-          draws: Number(stats['ties'] ?? stats['T'] ?? stats['D'] ?? 0),
+          draws: Number(stats['ties'] ?? stats['D'] ?? 0),
           losses: Number(stats['losses'] ?? stats['L'] ?? 0),
-          goalsFor: Number(stats['pointsFor'] ?? stats['GF'] ?? stats['goalsFor'] ?? 0),
-          goalsAgainst: Number(stats['pointsAgainst'] ?? stats['GA'] ?? stats['goalsAgainst'] ?? 0),
-          points: Number(stats['points'] ?? stats['PTS'] ?? 0),
+          goalsFor: Number(stats['pointsFor'] ?? stats['F'] ?? stats['GF'] ?? 0),
+          goalsAgainst: Number(stats['pointsAgainst'] ?? stats['A'] ?? stats['GA'] ?? 0),
+          points: Number(stats['points'] ?? stats['P'] ?? stats['PTS'] ?? 0),
           stage: 'group',
         }
       })
