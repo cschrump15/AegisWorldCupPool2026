@@ -3,6 +3,8 @@ import { POOL } from '@/lib/pool'
 
 const ESPN_STANDINGS_URL =
   'https://site.api.espn.com/apis/v2/sports/soccer/fifa.world/standings'
+const ESPN_SCOREBOARD_URL =
+  'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?limit=200&dates=20260628-20260720'
 
 export interface TeamStanding {
   espnName: string
@@ -53,6 +55,23 @@ function normalizeTeamName(name: string): string {
     .trim()
 }
 
+// ESPN's season.slug values map directly to our stage keys
+const SLUG_TO_STAGE: Record<string, string> = {
+  'round-of-32': 'round of 32',
+  'round-of-16': 'round of 16',
+  'quarterfinals': 'quarterfinal',
+  'quarterfinal': 'quarterfinal',
+  'semifinals': 'semifinal',
+  'semifinal': 'semifinal',
+  'final': 'final',
+  '3rd-place-match': 'eliminated', // lost semis — out of main prize contention
+}
+
+const STAGE_RANK: Record<string, number> = {
+  final: 6, semifinal: 5, quarterfinal: 4, 'round of 16': 3,
+  'round of 32': 2, group: 1, eliminated: 0,
+}
+
 async function fetchESPNStandings(): Promise<GroupStandings[]> {
   try {
     const res = await fetch(ESPN_STANDINGS_URL, {
@@ -63,8 +82,6 @@ async function fetchESPNStandings(): Promise<GroupStandings[]> {
     const data = await res.json()
 
     const groups: GroupStandings[] = []
-
-    // ESPN returns data.children[] for 2026 World Cup
     const standingsGroups = data?.children ?? data?.standings?.groups ?? []
 
     for (const grp of standingsGroups) {
@@ -100,8 +117,66 @@ async function fetchESPNStandings(): Promise<GroupStandings[]> {
   }
 }
 
+interface KnockoutStatus {
+  stage: string
+  eliminated: boolean
+}
+
+async function fetchKnockoutStatus(): Promise<Map<string, KnockoutStatus>> {
+  const statusMap = new Map<string, KnockoutStatus>()
+
+  try {
+    const res = await fetch(ESPN_SCOREBOARD_URL, {
+      cache: 'no-store',
+      headers: { 'User-Agent': 'Mozilla/5.0' },
+    })
+    if (!res.ok) throw new Error(`ESPN scoreboard ${res.status}`)
+    const data = await res.json()
+
+    const events = data?.events ?? []
+
+    for (const event of events) {
+      const slug: string = event.season?.slug ?? ''
+      const matchedStage = SLUG_TO_STAGE[slug]
+      if (!matchedStage) continue // not a knockout round we track, or unrecognized slug
+
+      const competition = event.competitions?.[0]
+      if (!competition) continue
+
+      const completed = competition.status?.type?.completed === true
+      const competitors = competition.competitors ?? []
+
+      for (const comp of competitors) {
+        const teamName = comp.team?.displayName ?? comp.team?.name ?? ''
+        const key = normalizeTeamName(teamName)
+
+        // advance: true means they won and move to the next round
+        // winner: false + completed means they lost this match
+        const advanced = comp.advance === true
+        const lost = completed && comp.winner === false
+
+        const existing = statusMap.get(key)
+
+        if (!existing || STAGE_RANK[matchedStage] >= STAGE_RANK[existing.stage]) {
+          statusMap.set(key, {
+            stage: matchedStage,
+            eliminated: lost && !advanced,
+          })
+        }
+      }
+    }
+  } catch (err) {
+    console.error('ESPN scoreboard fetch failed:', err)
+  }
+
+  return statusMap
+}
+
 export async function GET() {
-  const groups = await fetchESPNStandings()
+  const [groups, knockoutStatus] = await Promise.all([
+    fetchESPNStandings(),
+    fetchKnockoutStatus(),
+  ])
 
   const teamLookup = new Map<string, { standing: TeamStanding; groupName: string }>()
   for (const g of groups) {
@@ -114,6 +189,7 @@ export async function GET() {
     const key = normalizeTeamName(entry.espnTeam)
     const match = teamLookup.get(key)
     const standing = match?.standing
+    const knockout = knockoutStatus.get(key)
 
     const gamesPlayed = standing?.gamesPlayed ?? 0
     const goalsFor = standing?.goalsFor ?? 0
@@ -123,6 +199,11 @@ export async function GET() {
     const groupStandings = match
       ? groups.find((g) => g.group === match.groupName) ?? null
       : null
+
+    let stage = standing?.stage ?? 'group'
+    if (knockout) {
+      stage = knockout.eliminated ? 'eliminated' : knockout.stage
+    }
 
     return {
       members: entry.members,
@@ -138,7 +219,7 @@ export async function GET() {
       wins: standing?.wins ?? 0,
       draws: standing?.draws ?? 0,
       losses: standing?.losses ?? 0,
-      stage: standing?.stage ?? 'group',
+      stage,
       shutoutEligible,
       shutoutWinner,
       groupStandings: groupStandings
@@ -149,7 +230,7 @@ export async function GET() {
   })
 
   results.sort((a, b) => {
-    const stageDiff = (b.stage === 'group' ? 0 : 1) - (a.stage === 'group' ? 0 : 1)
+    const stageDiff = STAGE_RANK[b.stage] - STAGE_RANK[a.stage]
     if (stageDiff !== 0) return stageDiff
     const ptsDiff = b.points - a.points
     if (ptsDiff !== 0) return ptsDiff
